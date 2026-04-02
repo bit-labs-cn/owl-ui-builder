@@ -13,7 +13,7 @@ import { plugins } from "./vite-configure/plugins";
 
 export default async ({ mode }: ConfigEnv): Promise<UserConfigExport> => {
  
-  const { VITE_PORT, VITE_COMPRESSION, VITE_PUBLIC_PATH } = wrapperEnv(
+  const { VITE_PORT, VITE_COMPRESSION, VITE_PUBLIC_PATH, VITE_BASE_URL} = wrapperEnv(
     loadEnv(mode, root)
   );
 
@@ -31,7 +31,7 @@ export default async ({ mode }: ConfigEnv): Promise<UserConfigExport> => {
       include: defaultOptimizeInclude,
       exclude: defaultOptimizeExclude
     },
-    server: debugServer(VITE_PORT),
+    server: debugServer(VITE_BASE_URL, VITE_PORT),
     build: build()
   }
 };

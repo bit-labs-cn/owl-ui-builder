@@ -34,7 +34,6 @@ export const plugins = (VITE_COMPRESSION: string) : PluginOption[] => {
     vueJsx(),
     VueI18nPlugin({
       include: [
-        resolvePackagePath("@bit-labs.cn/owl-ui", "locales/**"),
         ...workspaceLocalesGlobs
       ]
     }),

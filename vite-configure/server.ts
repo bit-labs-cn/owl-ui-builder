@@ -1,5 +1,5 @@
 import { fsAllow } from "./bootstrap";
-export const debugServer = (VITE_PORT: number) => {
+export const debugServer = (VITE_BASE_URL: string, VITE_PORT: number) => {
 
   return {
     port: VITE_PORT,
@@ -9,7 +9,7 @@ export const debugServer = (VITE_PORT: number) => {
     },
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:8080/",
+        target: VITE_BASE_URL,
         changeOrigin: true,
         rewrite: path => path.replace(/^\/api/, "/api/")
       }
