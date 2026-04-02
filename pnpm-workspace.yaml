@@ -1,10 +1,11 @@
 packages:
   - "."
   - "../owl-ui"
-  - "../owl-admin-ui"
-  - "../owl-cms/fronted/admin"
-  - "../owl-workorder/fronted/admin"
-  - "../lift-vision/fronted/admin"
-  - "../owl-portal/fronted/admin"
-  - "../asset-manage/fronted/admin"
+  - "../owl-admin/frontend/admin"
+  - "../owl-cms/frontend/admin"
+  - "../owl-workorder/frontend/admin"
+  - "../lift-vision/frontend/admin"
+  - "../owl-portal/frontend/admin"
+  - "../asset-manage/frontend/admin"
+  - "../owl-inspection/frontend/admin"
 
