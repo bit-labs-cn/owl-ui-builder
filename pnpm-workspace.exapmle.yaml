@@ -1,0 +1,11 @@
+packages:
+  - "."
+  - "../owl-ui"
+  - "../owl-admin/frontend/admin"
+  - "../owl-cms/frontend/admin"
+  - "../owl-workorder/frontend/admin"
+  - "../lift-vision/frontend/admin"
+  - "../owl-portal/frontend/admin"
+  - "../asset-manage/frontend/admin"
+  - "../owl-inspection/frontend/admin"
+

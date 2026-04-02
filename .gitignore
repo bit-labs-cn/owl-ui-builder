@@ -1,3 +1,5 @@
 node_modules
 .idea
 dist
+pnpm-lock.yaml
+pnpm-workspace.yaml
