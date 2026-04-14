@@ -12,6 +12,11 @@ export const debugServer = (VITE_BASE_URL: string, VITE_PORT: number) => {
         target: VITE_BASE_URL,
         changeOrigin: true,
         rewrite: path => path.replace(/^\/api/, "/api/")
+      },
+      "/storage": {
+        target: VITE_BASE_URL,
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/storage/, "/storage/")
       }
     }
   }
