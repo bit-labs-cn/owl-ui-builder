@@ -6,3 +6,4 @@ pnpm-workspace.yaml
 package.json
 src/*
 !src/asset.ts
+!src/main.ts

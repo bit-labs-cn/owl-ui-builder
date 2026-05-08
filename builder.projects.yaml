@@ -1,0 +1,5 @@
+# 项目名（对应 src/<项目名>.ts）: 平台标题（写入 platform-config.json 与页面 title）
+asset: 高速路集团资产管理
+portal: 门户管理平台
+lift-vision: 电梯卫视智能平台
+cdn: CDN/WAF 管理平台
