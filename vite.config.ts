@@ -10,6 +10,7 @@ import { debugServer } from "./vite-configure/server";
 import {root, alias} from "./vite-configure/bootstrap";
 import { build } from "./vite-configure/build";
 import { plugins } from "./vite-configure/plugins";
+import { owlBuilderProjectPlugin } from "./vite-configure/project-plugin";
 
 export default async ({ mode }: ConfigEnv): Promise<UserConfigExport> => {
  
@@ -26,7 +27,7 @@ export default async ({ mode }: ConfigEnv): Promise<UserConfigExport> => {
       }
     },
 
-    plugins: plugins(VITE_COMPRESSION),
+    plugins: [owlBuilderProjectPlugin({ root }), ...plugins(VITE_COMPRESSION)],
     optimizeDeps: {
       include: defaultOptimizeInclude,
       exclude: defaultOptimizeExclude

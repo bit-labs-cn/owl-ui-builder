@@ -1,6 +1,6 @@
 /**
- * 固定入口：实际子应用由 scripts/run-project.mjs 写入的 generated-entry 决定。
+ * 固定入口：实际子应用由 Vite 插件 virtual:project-entry 按 VITE_APP_SYSTEM 注入。
  */
-import { loadProjectEntry } from "./generated-entry";
+import { loadProjectEntry } from "virtual:project-entry";
 
 void loadProjectEntry();

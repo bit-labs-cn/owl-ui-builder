@@ -7,3 +7,4 @@ package.json
 src/*
 !src/asset.ts
 !src/main.ts
+!src/vite-env.d.ts

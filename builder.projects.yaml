@@ -1,5 +1,13 @@
-# 项目名（对应 src/<项目名>.ts）: 平台标题（写入 platform-config.json 与页面 title）
-asset: 高速路集团资产管理
-portal: 门户管理平台
-lift-vision: 电梯卫视智能平台
-cdn: CDN/WAF 管理平台
+# 每个项目必须为对象：title（平台标题）、baseUrl（该项目的 VITE_BASE_URL，开发代理 / 构建环境变量）
+# 项目名对应 src/<项目名>.ts
+asset:
+  title: 高速路集团资产管理
+  baseUrl: http://192.168.0.13:8080/
+
+lift-vision:
+  title: 电梯卫视智能平台
+  baseUrl: http://192.168.0.13:8080/
+
+sms:
+  title: 短信服务平台
+  baseUrl: http://192.168.0.13:8080/
