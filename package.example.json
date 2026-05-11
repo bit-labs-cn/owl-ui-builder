@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "dev:asset": "vite --open /asset.html",
-    "build": "rimraf dist && vite build",
+    "dev": "node scripts/run-project.mjs dev",
+    "build": "node scripts/run-project.mjs build",
+    "dev:edge": "vite --open /edge.html",
     "build:staging": "rimraf dist && vite build --mode staging",
     "preview": "vite preview"
   },

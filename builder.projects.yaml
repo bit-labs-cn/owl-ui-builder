@@ -1,13 +1,14 @@
 # 每个项目必须为对象：title（平台标题）、baseUrl（该项目的 VITE_BASE_URL，开发代理 / 构建环境变量）
 # 项目名对应 src/<项目名>.ts
 asset:
-  title: 高速路集团资产管理
+  title: 高速公路通信网络设备管理系统
   baseUrl: http://192.168.0.13:8080/
 
 lift-vision:
   title: 电梯卫视智能平台
   baseUrl: http://192.168.0.13:8080/
 
-sms:
-  title: 短信服务平台
-  baseUrl: http://192.168.0.13:8080/
+# 兴仁水厂（xinren-water 后端）；本地开发可将 baseUrl 改为你的网关地址
+xinren-water:
+  title: 兴仁水厂智慧管理平台
+  baseUrl: http://127.0.0.1:8080/
