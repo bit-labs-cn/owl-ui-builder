@@ -2,7 +2,8 @@
 # 项目名对应 src/<项目名>.ts
 asset:
   title: 高速公路通信网络设备管理系统
-  baseUrl: http://192.168.0.13:8080/
+  # baseUrl: http://localhost:8080/
+  baseUrl:  /
 
 lift-vision:
   title: 电梯卫视智能平台
@@ -12,3 +13,10 @@ lift-vision:
 xinren-water:
   title: 兴仁水厂智慧管理平台
   baseUrl: http://127.0.0.1:8080/
+  # baseUrl:  /
+
+# 施工管理系统（owl-shigong 后端）
+shigong:
+  title: 施工管理系统
+  # baseUrl:  http://127.0.0.1:8085/
+  baseUrl:  /

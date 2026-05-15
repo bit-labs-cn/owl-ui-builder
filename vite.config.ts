@@ -22,6 +22,7 @@ export default async ({ mode }: ConfigEnv): Promise<UserConfigExport> => {
     base: VITE_PUBLIC_PATH,
     root,
     resolve: {
+      dedupe: ["vue", "vue-router"],
       alias: {
         ...alias,
       }
