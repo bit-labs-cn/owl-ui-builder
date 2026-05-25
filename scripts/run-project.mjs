@@ -7,7 +7,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import net from "node:net";
-import { dirname, join } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
 
@@ -31,11 +31,65 @@ function readDevStartPort(projectRoot) {
 }
 
 /**
+ * @param {string} builderRoot
+ * @returns {{ name: string, dir: string }[]}
+ */
+function readPnpmWorkspacePackages(builderRoot) {
+  const wsFile = join(builderRoot, "pnpm-workspace.yaml");
+  if (!existsSync(wsFile)) return [];
+  const map = parseYaml(readFileSync(wsFile, "utf8"));
+  const paths = Array.isArray(map?.packages) ? map.packages : [];
+
+  const result = [];
+  for (const rel of paths) {
+    if (typeof rel !== "string") continue;
+    const dir = resolve(builderRoot, rel);
+    const pkgFile = join(dir, "package.json");
+    if (!existsSync(pkgFile)) continue;
+    try {
+      const pkg = JSON.parse(readFileSync(pkgFile, "utf8"));
+      if (pkg && typeof pkg.name === "string" && pkg.name.trim()) {
+        result.push({ name: pkg.name, dir });
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  return result;
+}
+
+/**
+ * @param {string} slug
+ * @param {{ name: string, dir: string }[]} pkgs
+ * @param {string} projectKey
+ * @returns {string}
+ */
+function resolveLogoPath(slug, pkgs, projectKey) {
+  const candidates = [
+    `@bit-labs.cn/${slug}-ui`,
+    `@bit-labs.cn/${slug}`,
+    slug
+  ];
+  const hit = pkgs.find(p => candidates.includes(p.name));
+  if (!hit) {
+    fail(
+      `项目 "${projectKey}" 的 logo "${slug}" 无法匹配到任何 workspace 包（已尝试：${candidates.join(", ")}）`
+    );
+  }
+  const logoFile = join(hit.dir, "src", "assets", "logo.png");
+  if (!existsSync(logoFile)) {
+    fail(`项目 "${projectKey}" 的 logo "${slug}" 缺少文件：${logoFile}`);
+  }
+  return logoFile;
+}
+
+/**
  * @param {unknown} raw
  * @param {string} projectKey
- * @returns {{ title: string, baseUrl: string }}
+ * @param {"dev" | "build"} mode
+ * @returns {{ title: string, baseUrl: string, logoSlug: string | null }}
  */
-function normalizeProjectConfig(raw, projectKey) {
+function normalizeProjectConfig(raw, projectKey, mode) {
   if (typeof raw === "string") {
     fail(
       `项目 "${projectKey}" 配置无效：已不允许「仅填写标题字符串」，必须为对象并包含必填字段 title、baseUrl`
@@ -52,17 +106,45 @@ function normalizeProjectConfig(raw, projectKey) {
     fail(`项目 "${projectKey}" 缺少必填字段 title（非空字符串）`);
   }
 
-  const bu =
+  const buRaw =
     raw.baseUrl ??
     raw.base_url ??
     raw.VITE_BASE_URL ??
     raw.viteBaseUrl;
+
+  let bu;
+  if (typeof buRaw === "string") {
+    /** 字符串简写：dev / build 都用同一个值（旧语义） */
+    bu = buRaw;
+  } else if (buRaw && typeof buRaw === "object" && !Array.isArray(buRaw)) {
+    /** 对象形式：按 mode 取值，build 兼容 prod / production 别名，dev 兼容 development */
+    bu =
+      buRaw[mode] ??
+      (mode === "build"
+        ? buRaw.prod ?? buRaw.production
+        : buRaw.development);
+  } else {
+    fail(`项目 "${projectKey}" 缺少必填字段 baseUrl`);
+  }
+
   if (typeof bu !== "string" || !bu.trim()) {
-    fail(`项目 "${projectKey}" 缺少必填字段 baseUrl（非空字符串）`);
+    fail(
+      `项目 "${projectKey}" 在 ${mode} 模式下缺少 baseUrl.${mode}（也未提供字符串简写）`
+    );
   }
 
   const baseUrl = bu.trim().replace(/\/+$/, "") + "/";
-  return { title: title.trim(), baseUrl };
+
+  const logoRaw = raw.logo ?? raw.Logo;
+  let logoSlug = null;
+  if (logoRaw !== undefined && logoRaw !== null) {
+    if (typeof logoRaw !== "string" || !logoRaw.trim()) {
+      fail(`项目 "${projectKey}" 的 logo 必须为非空字符串（子应用短名）`);
+    }
+    logoSlug = logoRaw.trim();
+  }
+
+  return { title: title.trim(), baseUrl, logoSlug };
 }
 
 function findFreePort(startPort, maxAttempts = 80) {
@@ -132,9 +214,10 @@ async function main() {
     );
   }
 
-  const { title, baseUrl } = normalizeProjectConfig(
+  const { title, baseUrl, logoSlug } = normalizeProjectConfig(
     projectsMap[project],
-    project
+    project,
+    mode
   );
 
   const entryFile = join(root, "src", `${project}.ts`);
@@ -147,6 +230,12 @@ async function main() {
     fail(`缺少 ${platformPath}，请先保留默认 platform-config.json`);
   }
 
+  let logoPath = null;
+  if (logoSlug) {
+    const pkgs = readPnpmWorkspacePackages(root);
+    logoPath = resolveLogoPath(logoSlug, pkgs, project);
+  }
+
   /** 不写磁盘：dev 由 Vite 中间件注入 Title；build 由插件写入 dist */
   const env = {
     ...process.env,
@@ -155,14 +244,20 @@ async function main() {
     /** 每项目在 YAML 中显式配置，覆盖 .env 中的默认值 */
     VITE_BASE_URL: baseUrl
   };
+  if (logoPath) {
+    env.VITE_APP_LOGO_PATH = logoPath;
+  }
 
   if (mode === "dev") {
     const start = readDevStartPort(root);
     try {
       const port = await findFreePort(start);
       env.VITE_PORT = String(port);
+      const logoHint = logoPath
+        ? `，logo：${relative(root, logoPath).replace(/\\/g, "/")}`
+        : "";
       console.log(
-        `[owl-ui-builder] ${project} → http://localhost:${port}/  （标题：${title.trim()}，API：${baseUrl}）`
+        `[owl-ui-builder] ${project} → http://localhost:${port}/  （标题：${title.trim()}，API：${baseUrl}${logoHint}）`
       );
     } catch (e) {
       fail(e.message || String(e));

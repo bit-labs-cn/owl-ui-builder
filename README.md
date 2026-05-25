@@ -57,15 +57,26 @@ pnpm preview
    每个项目**必须**为对象，且 **`title`、`baseUrl` 均为必填**（不允许再使用「一行字符串只写标题」的简写）。
 
    ```yaml
+   # 字符串简写：dev / build 共用同一个 baseUrl
    <project>:
      title: 你的平台标题
      baseUrl: http://192.168.0.13:8080/
+
+   # 对象形式：dev 走绝对地址做代理，build 走相对路径（推荐）
+   <project>:
+     title: 你的平台标题
+     baseUrl:
+       dev: http://127.0.0.1:8080/
+       build: /
    ```
 
-   - `baseUrl`：该项目的后端根地址，会注入为当前进程的 `VITE_BASE_URL`（开发时决定 `/api`、`/storage` 代理指向；构建时同样以此为准）。
-   - 字段别名：`base_url`、`VITE_BASE_URL`、`viteBaseUrl`（仍表示同一个含义）。
+   - `baseUrl`：该项目的后端根地址，会注入为当前进程的 `VITE_BASE_URL`（开发时决定 `/api`、`/storage` 代理指向；构建时作为 axios `baseURL` 打入产物）。
+     - **字符串**：dev 与 build 共用同一个值（旧语义）。
+     - **对象 `{ dev, build }`**：分别用于 `pnpm dev <project>` 与 `pnpm build <project>`；当前命令对应键缺失时会报错。`build` 兼容 `prod` / `production` 别名，`dev` 兼容 `development` 别名。
+   - 字符串简写下，字段别名 `base_url`、`VITE_BASE_URL`、`viteBaseUrl` 仍然可用。
    - 末尾斜杠可有可无，脚本会规范为以 `/` 结尾。
    - 项目名含连字符时写 `lift-vision:` 即可，勿使用中文弯引号作为 key。
+   - **注意**：`.env.development` / `.env.production` 里的 `VITE_BASE_URL` 已不再生效（会被本 YAML 覆盖），YAML 是唯一来源。只有绕过包装脚本的旁路命令（`pnpm dev:edge`、`pnpm build:staging`）才会用到 `.env.{development,staging}` 里的值。
 
 3. **依赖与子应用包**  
    若需引入新的 workspace UI 包：
