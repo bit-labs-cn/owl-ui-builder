@@ -61,26 +61,68 @@ function readPnpmWorkspacePackages(builderRoot) {
 /**
  * @param {string} slug
  * @param {{ name: string, dir: string }[]} pkgs
- * @param {string} projectKey
- * @returns {string}
+ * @returns {string | null}
  */
-function resolveLogoPath(slug, pkgs, projectKey) {
+function tryResolveLogoPath(slug, pkgs) {
   const candidates = [
     `@bit-labs.cn/${slug}-ui`,
     `@bit-labs.cn/${slug}`,
     slug
   ];
   const hit = pkgs.find(p => candidates.includes(p.name));
-  if (!hit) {
-    fail(
-      `项目 "${projectKey}" 的 logo "${slug}" 无法匹配到任何 workspace 包（已尝试：${candidates.join(", ")}）`
-    );
-  }
+  if (!hit) return null;
   const logoFile = join(hit.dir, "src", "assets", "logo.png");
-  if (!existsSync(logoFile)) {
-    fail(`项目 "${projectKey}" 的 logo "${slug}" 缺少文件：${logoFile}`);
-  }
+  if (!existsSync(logoFile)) return null;
   return logoFile;
+}
+
+/**
+ * 从 src/<project>.ts 中导入的子系统包查找 logo（如 asset → asset-manage-ui）
+ * @param {string} projectKey
+ * @param {{ name: string, dir: string }[]} pkgs
+ * @param {string} builderRoot
+ * @returns {string | null}
+ */
+function resolveLogoFromEntryImports(projectKey, pkgs, builderRoot) {
+  const entryFile = join(builderRoot, "src", `${projectKey}.ts`);
+  if (!existsSync(entryFile)) return null;
+
+  const text = readFileSync(entryFile, "utf8");
+  const importRe = /from\s+["'](@bit-labs\.cn\/[^"']+)["']/g;
+  let m;
+  while ((m = importRe.exec(text)) !== null) {
+    const pkgName = m[1];
+    const hit = pkgs.find(p => p.name === pkgName);
+    if (!hit) continue;
+    const logoFile = join(hit.dir, "src", "assets", "logo.png");
+    if (existsSync(logoFile)) return logoFile;
+  }
+  return null;
+}
+
+/**
+ * @param {string} projectKey
+ * @param {string | null} explicitLogoSlug YAML 显式 logo；未配置时默认与启动项目名一致
+ * @param {{ name: string, dir: string }[]} pkgs
+ * @param {string} builderRoot
+ * @returns {string | null}
+ */
+function resolveProjectLogoPath(projectKey, explicitLogoSlug, pkgs, builderRoot) {
+  const slugs = explicitLogoSlug ? [explicitLogoSlug] : [projectKey];
+  for (const slug of slugs) {
+    const logoPath = tryResolveLogoPath(slug, pkgs);
+    if (logoPath) return logoPath;
+  }
+
+  if (!explicitLogoSlug) {
+    const fromEntry = resolveLogoFromEntryImports(projectKey, pkgs, builderRoot);
+    if (fromEntry) return fromEntry;
+  }
+
+  console.warn(
+    `[owl-ui-builder] 项目 "${projectKey}" 未找到 logo.png（已尝试启动名与子系统入口导入），侧边栏 logo 将不可用`
+  );
+  return null;
 }
 
 /**
@@ -231,10 +273,8 @@ async function main() {
   }
 
   let logoPath = null;
-  if (logoSlug) {
-    const pkgs = readPnpmWorkspacePackages(root);
-    logoPath = resolveLogoPath(logoSlug, pkgs, project);
-  }
+  const pkgs = readPnpmWorkspacePackages(root);
+  logoPath = resolveProjectLogoPath(project, logoSlug, pkgs, root);
 
   /** 不写磁盘：dev 由 Vite 中间件注入 Title；build 由插件写入 dist */
   const env = {
